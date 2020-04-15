@@ -204,10 +204,10 @@ public class Encrypt extends WssecCalloutBase implements Execution {
     // encrypt the cek
     RSAPublicKey certPublicKey = (RSAPublicKey) cipherConfiguration.certificate.getPublicKey();
 
-
-    String cipherName = (cipherConfiguration.rsaAlgorithm == RsaAlgorithm.PKCS1_5)
-      ? XMLCipher.RSA_v1dot5
-      : XMLCipher.RSA_OAEP;
+    String cipherName =
+        (cipherConfiguration.rsaAlgorithm == RsaAlgorithm.OAEP)
+          ? XMLCipher.RSA_OAEP
+          : XMLCipher.RSA_v1dot5;
 
     XMLCipher keyCipher = XMLCipher.getInstance(cipherName);
     keyCipher.init(XMLCipher.WRAP_MODE, certPublicKey);
@@ -436,25 +436,13 @@ public class Encrypt extends WssecCalloutBase implements Execution {
   private KeyLocation getKeyLocation(MessageContext msgCtxt) throws Exception {
     String klocString = getSimpleOptionalProperty("key-location", msgCtxt);
     if (klocString == null) return KeyLocation.IN_SECURITY_HEADER;
-    klocString = klocString.trim().replaceAll("-","_").toUpperCase();
+    klocString = klocString.trim().replaceAll("-", "_").toUpperCase();
     KeyLocation location = KeyLocation.fromString(klocString);
     if (location == KeyLocation.NOT_SPECIFIED) {
       msgCtxt.setVariable(varName("warning"), "unrecognized key-location");
       return KeyLocation.IN_SECURITY_HEADER;
     }
     return location;
-  }
-
-  private RsaAlgorithm getRsaAlgorithm(MessageContext msgCtxt) throws Exception {
-    String algString = getSimpleOptionalProperty("rsa-algorithm", msgCtxt);
-    if (algString == null) return RsaAlgorithm.PKCS1_5;
-    algString = algString.trim().replaceAll("-","_").toUpperCase();
-    RsaAlgorithm algorithm = RsaAlgorithm.fromString(algString);
-    if (algorithm == RsaAlgorithm.NOT_SPECIFIED) {
-      msgCtxt.setVariable(varName("warning"), "unrecognized rsa-algorithm");
-      return RsaAlgorithm.PKCS1_5;
-    }
-    return algorithm;
   }
 
   static class CipherConfiguration {

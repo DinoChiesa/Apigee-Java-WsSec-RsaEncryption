@@ -1,4 +1,4 @@
-// Copyright 2018-2019 Google LLC
+// Copyright 2018-2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,219 +60,16 @@ public class Decrypt extends WssecCalloutBase implements Execution {
     super(properties);
   }
 
-  private static Element getSecurityElement(Document doc, String soapNs) {
-    NodeList nl = doc.getElementsByTagNameNS(soapNs, "Envelope");
-    if (nl.getLength() != 1) {
-      throw new RuntimeException("No element: soap:Envelope");
-    }
-    Element envelope = (Element) nl.item(0);
-    nl = envelope.getElementsByTagNameNS(soapNs, "Header");
-    if (nl.getLength() != 1) {
-      throw new RuntimeException("No element: soap:Header");
-    }
-    Element header = (Element) nl.item(0);
-    nl = header.getElementsByTagNameNS(Namespaces.WSSEC, "Security");
-    if (nl.getLength() != 1) {
-      throw new RuntimeException("No element: wssec:Security");
-    }
-    return (Element) nl.item(0);
-  }
-
-  private static String toCertPEM(String s) {
-    int len = s.length();
-    int sIndex = 0;
-    int eIndex = PEM_LINE_LENGTH;
-    StringBuilder sb = new StringBuilder();
-    sb.append("-----BEGIN CERTIFICATE-----\n");
-    while (sIndex < len) {
-      sb.append(s.substring(sIndex, eIndex));
-      sb.append("\n");
-      sIndex += PEM_LINE_LENGTH;
-      eIndex += PEM_LINE_LENGTH;
-      if (eIndex > len) {
-        eIndex = len;
-      }
-    }
-    sb.append("-----END CERTIFICATE-----\n");
-    s = sb.toString();
-    return s;
-  }
-
-  private static Element getNamedElementWithId(
-      String xmlns, String soapNs, String tagName, String id, Document doc) {
-    id = id.substring(1); // chopLeft
-    NodeList nl = getSecurityElement(doc, soapNs).getElementsByTagNameNS(xmlns, tagName);
-    for (int i = 0; i < nl.getLength(); i++) {
-      Element candidate = (Element) nl.item(i);
-      String candidateId = candidate.getAttributeNS(Namespaces.WSU, "Id");
-      if (id.equals(candidateId)) return candidate;
-    }
-    return null;
-  }
-
-  private Certificate getCertificate(
-      Element keyInfo, Document doc, String soapNs, MessageContext msgCtxt)
-      throws KeyException, NoSuchAlgorithmException, InvalidNameException,
-          CertificateEncodingException {
-    // There are 4 cases to handle:
-    // 1. SecurityTokenReference pointing to a BinarySecurityToken
-    // 2. SecurityTokenReference with a thumbprint
-    // 3. SecurityTokenReference with IssuerName and SerialNumber
-    // 4. X509Data with Raw cert data
-    //
-    // In cases 1 and 4, we have the cert in the document.
-    // In cases 2 and 3, the verifier must provide the cert separately, and the validity
-    // check must verify that the thumbprint or IssuerName and SerialNumber match.
-
-    // There is a 5th case,
-    // 5. KeyValue with RSAKeyValue and Modulus + Exponent
-    //
-    // In case 5, ... we have the public key in the document. Not a cert.
-    // this code does not handle verification for that kind of signature.
-    //
-
-    NodeList nl = keyInfo.getElementsByTagNameNS(Namespaces.WSSEC, "SecurityTokenReference");
-    if (nl.getLength() == 0) {
-      nl = keyInfo.getElementsByTagNameNS(XMLSignature.XMLNS, "X509Data");
-      if (nl.getLength() == 0) throw new RuntimeException("No suitable child element of KeyInfo");
-      Element x509Data = (Element) (nl.item(0));
-      nl = x509Data.getElementsByTagNameNS(XMLSignature.XMLNS, "X509Certificate");
-      if (nl.getLength() == 0)
-        throw new RuntimeException("No X509Certificate child element of KeyInfo/X509Data");
-
-      // case 4: X509Data with raw data
-      Element x509Cert = (Element) (nl.item(0));
-
-      String base64String = x509Cert.getTextContent();
-      Certificate cert = certificateFromPEM(toCertPEM(base64String));
-      return cert;
-    }
-
-    Element str = (Element) nl.item(0);
-    nl = str.getElementsByTagNameNS(Namespaces.WSSEC, "Reference");
-    // nl = keyInfo.getChildNodes();
-    // Element reference = (Element) nl.item(0);
-    if (nl.getLength() == 0) {
-      nl = str.getElementsByTagNameNS(Namespaces.WSSEC, "KeyIdentifier");
-      if (nl.getLength() == 0) {
-        nl = str.getElementsByTagNameNS(XMLSignature.XMLNS, "X509Data");
-        if (nl.getLength() == 0)
-          throw new RuntimeException(
-              "No suitable child element beneath: KeyInfo/SecurityTokenReference");
-
-        // case 3: SecurityTokenReference with IssuerName and SerialNumber
-        Element x509Data = (Element) (nl.item(0));
-        nl = x509Data.getElementsByTagNameNS(XMLSignature.XMLNS, "X509IssuerSerial");
-        if (nl.getLength() == 0)
-          throw new RuntimeException(
-              "No X509IssuerSerial child element of KeyInfo/SecurityTokenReference/X509Data");
-        Element x509IssuerSerial = (Element) (nl.item(0));
-        nl = x509IssuerSerial.getElementsByTagNameNS(XMLSignature.XMLNS, "X509IssuerName");
-        if (nl.getLength() == 0) throw new RuntimeException("No X509IssuerName element found");
-        Element x509IssuerName = (Element) (nl.item(0));
-
-        nl = x509IssuerSerial.getElementsByTagNameNS(XMLSignature.XMLNS, "X509SerialNumber");
-        if (nl.getLength() == 0) throw new RuntimeException("No X509IssuerName element found");
-        Element x509SerialNumber = (Element) (nl.item(0));
-        X509Certificate cert = getCertificate(msgCtxt);
-
-        // check that the serial number matches
-        String assertedSerialNumber = x509SerialNumber.getTextContent();
-        if (assertedSerialNumber == null)
-          throw new RuntimeException("KeyInfo/SecurityTokenReference/../X509SerialNumber missing");
-        String availableSerialNumber = cert.getSerialNumber().toString();
-        if (!assertedSerialNumber.equals(availableSerialNumber))
-          throw new RuntimeException(
-              String.format(
-                  "X509SerialNumber mismatch cert(%s) doc(%s)",
-                  availableSerialNumber, assertedSerialNumber));
-
-        // check that the issuer name matches
-        String assertedIssuerName = x509IssuerName.getTextContent();
-        if (assertedIssuerName == null)
-          throw new RuntimeException("KeyInfo/SecurityTokenReference/../X509IssuerName missing");
-        IssuerNameStyle nameStyle = getIssuerNameStyle(msgCtxt);
-
-        String availableIssuerName =
-            (nameStyle == IssuerNameStyle.SHORT)
-                ? "CN=" + getCommonName(cert.getSubjectX500Principal())
-                : cert.getSubjectDN().getName();
-
-        if (!assertedIssuerName.equals(availableIssuerName))
-          throw new RuntimeException(
-              String.format(
-                  "X509SerialNumber mismatch cert(%s) doc(%s)",
-                  availableIssuerName, assertedIssuerName));
-
-        return cert;
-      }
-
-      // case 2: KeyIdentifier with thumbprint
-      Element ki = (Element) nl.item(0);
-      String valueType = ki.getAttribute("ValueType");
-      if (valueType == null
-          || !valueType.equals(
-              "http://docs.oasis-open.org/wss/oasis-wss-soap-message-security1.1#ThumbprintSHA1"))
-        throw new RuntimeException(
-            "KeyInfo/SecurityTokenReference/KeyIdentifier unsupported ValueType");
-
-      String assertedThumbprintSha1Base64 = ki.getTextContent();
-      if (assertedThumbprintSha1Base64 == null)
-        throw new RuntimeException("KeyInfo/SecurityTokenReference/KeyIdentifier no thumbprint");
-
-      X509Certificate cert = getCertificate(msgCtxt);
-      String availableThumbprintSha1Base64 = getThumbprintBase64(cert);
-      if (!assertedThumbprintSha1Base64.equals(availableThumbprintSha1Base64))
-        throw new RuntimeException(
-            "KeyInfo/SecurityTokenReference/KeyIdentifier thumbprint mismatch");
-      return cert;
-    }
-
-    // case 1: SecurityTokenReference pointing to a BinarySecurityToken
-    Element reference = (Element) nl.item(0);
-    String strUri = reference.getAttribute("URI");
-    if (strUri == null || !strUri.startsWith("#")) {
-      throw new RuntimeException(
-          "Unsupported URI format: KeyInfo/SecurityTokenReference/Reference");
-    }
-    Element bst =
-        getNamedElementWithId(Namespaces.WSSEC, soapNs, "BinarySecurityToken", strUri, doc);
-    if (bst == null) {
-      throw new RuntimeException("Unresolvable reference: #" + strUri);
-    }
-    String bstNs = bst.getNamespaceURI();
-    String tagName = bst.getLocalName();
-    if (bstNs == null
-        || !bstNs.equals(Namespaces.WSSEC)
-        || tagName == null
-        || !tagName.equals("BinarySecurityToken")) {
-      throw new RuntimeException("Unsupported SecurityTokenReference type");
-    }
-    String encodingType = bst.getAttribute("EncodingType");
-    if (encodingType == null
-        || !encodingType.equals(
-            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary")) {
-      throw new RuntimeException("Unsupported SecurityTokenReference EncodingType");
-    }
-    String valueType = bst.getAttribute("ValueType");
-    if (valueType == null
-        || !valueType.equals(
-            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3")) {
-      throw new RuntimeException("Unsupported SecurityTokenReference ValueType");
-    }
-    String base64String = bst.getTextContent();
-    Certificate cert = certificateFromPEM(toCertPEM(base64String));
-    return cert;
-  }
-
   private static class DocumentEncryptionState {
     public String soapns;
+    public String keyEncryptionAlgorithm;
     public String contentEncryptionAlgorithm;
     public Element encryptedKeyElement;
     public Element encryptedDataElement;
   }
 
-  private static DocumentEncryptionState checkCompulsoryElements(Document doc, DecryptConfiguration configuration) {
+  private static DocumentEncryptionState checkCompulsoryElements(
+      Document doc, DecryptConfiguration configuration) {
     NodeList nl = null;
     DocumentEncryptionState state = new DocumentEncryptionState();
     state.soapns =
@@ -309,29 +106,29 @@ public class Decrypt extends WssecCalloutBase implements Execution {
     if (nl.getLength() == 0) {
       // EncryptedKey may be a child of wssec:Security
       nl = security.getElementsByTagNameNS(Namespaces.XMLENC, "EncryptedKey");
-      if (nl.getLength() == 0)
-        throw new IllegalStateException("no EncryptedKey");
+      if (nl.getLength() == 0) throw new IllegalStateException("no EncryptedKey");
     }
 
-    if (nl.getLength() != 1)
-      throw new IllegalStateException("more than one EncryptedKey");
+    if (nl.getLength() != 1) throw new IllegalStateException("more than one EncryptedKey");
 
     Element encryptedKey = (Element) nl.item(0);
     state.encryptedKeyElement = encryptedKey;
 
     nl = encryptedKey.getElementsByTagNameNS(Namespaces.XMLENC, "EncryptionMethod");
-    if (nl.getLength() == 0)
-      throw new IllegalStateException("no EncryptedKey/EncryptionMethod");
+    if (nl.getLength() == 0) throw new IllegalStateException("no EncryptedKey/EncryptionMethod");
     if (nl.getLength() != 1)
       throw new IllegalStateException("more than one EncryptedKey/EncryptionMethod");
     Element encryptionMethod = (Element) nl.item(0);
     String methodAlgorithm = encryptionMethod.getAttribute("Algorithm");
 
-    if (!methodAlgorithm.equals("http://www.w3.org/2001/04/xmlenc#rsa-1_5") &&
-        !methodAlgorithm.equals("http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"))
+    state.keyEncryptionAlgorithm = methodAlgorithm;
+
+    if (!methodAlgorithm.equals("http://www.w3.org/2001/04/xmlenc#rsa-1_5")
+        && !methodAlgorithm.equals("http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p"))
       throw new IllegalStateException("unsupported EncryptionMethod for EncryptedKey");
 
-    encryptionMethod = getChildElementsByTagNameNS(encryptedData, Namespaces.XMLENC, "EncryptionMethod");
+    encryptionMethod =
+        getChildElementsByTagNameNS(encryptedData, Namespaces.XMLENC, "EncryptionMethod");
 
     if (encryptionMethod == null)
       throw new IllegalStateException("no EncryptedData/EncryptionMethod");
@@ -343,10 +140,16 @@ public class Decrypt extends WssecCalloutBase implements Execution {
 
   private Document decrypt_RSA(Document doc, DecryptConfiguration configuration) throws Exception {
     DocumentEncryptionState state = checkCompulsoryElements(doc, configuration);
-    if (configuration.contentEncryptionCipher != ContentEncryptionCipher.NONE) {
+    if (configuration.contentEncryptionCipher != ContentEncryptionCipher.NOT_SPECIFIED) {
       if (!state.contentEncryptionAlgorithm.equals(
           configuration.contentEncryptionCipher.asXmlCipherString()))
         throw new IllegalStateException("unacceptable Content EncryptionMethod");
+    }
+
+    if (configuration.rsaAlgorithm != RsaAlgorithm.NOT_SPECIFIED) {
+      if (!state.keyEncryptionAlgorithm.equals(
+          configuration.rsaAlgorithm.asUriString()))
+        throw new IllegalStateException("unacceptable Key EncryptionMethod");
     }
 
     // this works regardless where the EncryptedKey is found
@@ -450,7 +253,8 @@ public class Decrypt extends WssecCalloutBase implements Execution {
     public RSAPrivateKey privateKey; // required
     public X509Certificate certificate; // required
     public ContentEncryptionCipher contentEncryptionCipher =
-        ContentEncryptionCipher.NONE; // optional
+        ContentEncryptionCipher.NOT_SPECIFIED; // optional
+    public RsaAlgorithm rsaAlgorithm;
 
     public DecryptConfiguration() {}
 
@@ -468,6 +272,11 @@ public class Decrypt extends WssecCalloutBase implements Execution {
       this.contentEncryptionCipher = cipher;
       return this;
     }
+
+    public DecryptConfiguration withRsaAlgorithm(RsaAlgorithm alg) {
+      this.rsaAlgorithm = alg;
+      return this;
+    }
   }
 
   public ExecutionResult execute(final MessageContext msgCtxt, final ExecutionContext execContext) {
@@ -479,8 +288,7 @@ public class Decrypt extends WssecCalloutBase implements Execution {
           new DecryptConfiguration()
               .withSoapVersion(getSoapVersion(msgCtxt))
               .withPrivateKey(getPrivateKey(msgCtxt))
-              // .withAcceptableThumbprints(getAcceptableThumbprints(msgCtxt))
-              // .withAcceptableSubjectCNs(getAcceptableSubjectCNs(msgCtxt))
+              .withRsaAlgorithm(getRsaAlgorithm(msgCtxt))
               .withContentEncryptionCipher(getContentEncryptionCipher(msgCtxt));
 
       Document decryptedDoc = decrypt_RSA(document, decryptConfiguration);

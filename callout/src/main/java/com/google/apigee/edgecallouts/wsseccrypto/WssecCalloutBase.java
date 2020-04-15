@@ -131,6 +131,18 @@ public abstract class WssecCalloutBase {
     throw new IllegalStateException("unsupported cipher");
   }
 
+  protected RsaAlgorithm getRsaAlgorithm(MessageContext msgCtxt) throws Exception {
+    String algString = getSimpleOptionalProperty("rsa-algorithm", msgCtxt);
+    if (algString == null) return RsaAlgorithm.NOT_SPECIFIED;
+    algString = algString.trim().replaceAll("-", "_").toUpperCase();
+    RsaAlgorithm algorithm = RsaAlgorithm.fromString(algString);
+    if (algorithm == RsaAlgorithm.NOT_SPECIFIED) {
+      msgCtxt.setVariable(varName("warning"), "unrecognized rsa-algorithm");
+      return RsaAlgorithm.NOT_SPECIFIED;
+    }
+    return algorithm;
+  }
+
   public static Element getFirstChildElement(Element element) {
     for (Node currentChild = element.getFirstChild();
         currentChild != null;
@@ -147,8 +159,8 @@ public abstract class WssecCalloutBase {
         currentChild != null;
         currentChild = currentChild.getNextSibling()) {
       if (currentChild instanceof Element) {
-        if (currentChild.getLocalName().equals(localName) &&
-            ns.equals(currentChild.getNamespaceURI())) {
+        if (currentChild.getLocalName().equals(localName)
+            && ns.equals(currentChild.getNamespaceURI())) {
           return (Element) currentChild;
         }
       }
@@ -257,7 +269,6 @@ public abstract class WssecCalloutBase {
     LdapName ldapDN = new LdapName(principal.getName());
     String cn = null;
     for (Rdn rdn : ldapDN.getRdns()) {
-      // System.out.println(rdn.getType() + " -> " + rdn.getValue());
       if (rdn.getType().equals("CN")) {
         cn = rdn.getValue().toString();
       }

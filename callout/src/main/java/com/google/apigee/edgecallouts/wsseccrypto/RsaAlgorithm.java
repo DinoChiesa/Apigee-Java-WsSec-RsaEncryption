@@ -12,4 +12,15 @@ public enum RsaAlgorithm {
     }
     return RsaAlgorithm.NOT_SPECIFIED;
   }
+
+  public String asUriString() {
+      switch (this) {
+        case PKCS1_5:
+          return "http://www.w3.org/2001/04/xmlenc#rsa-1_5";
+        case OAEP:
+          return "http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p";
+      }
+      return "none";
+  }
+
 }

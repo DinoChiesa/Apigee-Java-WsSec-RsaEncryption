@@ -4,7 +4,7 @@ import java.util.Optional;
 import org.apache.xml.security.encryption.XMLCipher;
 
 public enum ContentEncryptionCipher {
-  NONE,
+  NOT_SPECIFIED,
   AES_128, AES_192, AES_256,
   AES_128_GCM, AES_192_GCM, AES_256_GCM,
   TRIPLEDES;
