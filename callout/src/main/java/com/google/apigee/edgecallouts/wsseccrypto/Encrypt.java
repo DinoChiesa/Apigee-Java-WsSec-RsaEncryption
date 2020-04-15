@@ -197,6 +197,8 @@ public class Encrypt extends WssecCalloutBase implements Execution {
     }
 
     // 5. create a random content encryption key (cek) and prepare the encrypted form
+    if (cipherConfiguration.contentEncryptionCipher == ContentEncryptionCipher.NOT_SPECIFIED)
+      cipherConfiguration.contentEncryptionCipher = ContentEncryptionCipher.AES_192_CBC;
     final String symmetricCipher = cipherConfiguration.contentEncryptionCipher.asXmlCipherString();
     Key contentEncryptingKey =
         generateContentEncryptionKey(
@@ -327,7 +329,7 @@ public class Encrypt extends WssecCalloutBase implements Execution {
     EncryptedData encryptedData = xmlCipher.getEncryptedData();
     encryptedData.setId(encryptedDataId);
 
-    if (cipherConfiguration.keyLocation == KeyLocation.UNDER_ENCRYPTED_DATA) {
+    if (cipherConfiguration.encryptedKeyLocation == EncryptedKeyLocation.UNDER_ENCRYPTED_DATA) {
       // 8a. put the encryptedkey under KeyInfo, and that under EncryptedData
       keyInfo.add(encryptedKey);
       encryptedData.setKeyInfo(keyInfo);
@@ -433,14 +435,14 @@ public class Encrypt extends WssecCalloutBase implements Execution {
     return t;
   }
 
-  private KeyLocation getKeyLocation(MessageContext msgCtxt) throws Exception {
-    String klocString = getSimpleOptionalProperty("key-location", msgCtxt);
-    if (klocString == null) return KeyLocation.IN_SECURITY_HEADER;
+  private EncryptedKeyLocation getEncryptedKeyLocation(MessageContext msgCtxt) throws Exception {
+    String klocString = getSimpleOptionalProperty("encrypted-key-location", msgCtxt);
+    if (klocString == null) return EncryptedKeyLocation.IN_SECURITY_HEADER;
     klocString = klocString.trim().replaceAll("-", "_").toUpperCase();
-    KeyLocation location = KeyLocation.fromString(klocString);
-    if (location == KeyLocation.NOT_SPECIFIED) {
-      msgCtxt.setVariable(varName("warning"), "unrecognized key-location");
-      return KeyLocation.IN_SECURITY_HEADER;
+    EncryptedKeyLocation location = EncryptedKeyLocation.fromString(klocString);
+    if (location == EncryptedKeyLocation.NOT_SPECIFIED) {
+      msgCtxt.setVariable(varName("warning"), "unrecognized encrypted-key-location");
+      return EncryptedKeyLocation.IN_SECURITY_HEADER;
     }
     return location;
   }
@@ -451,7 +453,7 @@ public class Encrypt extends WssecCalloutBase implements Execution {
     public ContentEncryptionCipher contentEncryptionCipher;
     public IssuerNameStyle issuerNameStyle;
     public KeyIdentifierType keyIdentifierType;
-    public KeyLocation keyLocation;
+    public EncryptedKeyLocation encryptedKeyLocation;
     public RsaAlgorithm rsaAlgorithm;
 
     public CipherConfiguration() {
@@ -468,8 +470,8 @@ public class Encrypt extends WssecCalloutBase implements Execution {
       return this;
     }
 
-    public CipherConfiguration withKeyLocation(KeyLocation location) {
-      this.keyLocation = location;
+    public CipherConfiguration withEncryptedKeyLocation(EncryptedKeyLocation location) {
+      this.encryptedKeyLocation = location;
       return this;
     }
 
@@ -504,7 +506,7 @@ public class Encrypt extends WssecCalloutBase implements Execution {
               .withCertificate(getCertificate(msgCtxt))
               .withRsaAlgorithm(getRsaAlgorithm(msgCtxt))
               .withKeyIdentifierType(getKeyIdentifierType(msgCtxt))
-              .withKeyLocation(getKeyLocation(msgCtxt))
+              .withEncryptedKeyLocation(getEncryptedKeyLocation(msgCtxt))
               .withIssuerNameStyle(getIssuerNameStyle(msgCtxt))
               .withContentEncryptionCipher(getContentEncryptionCipher(msgCtxt));
 

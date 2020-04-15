@@ -153,6 +153,7 @@ do it manually by running these commands:
                     <include name="lib/*.jar"/>
                     <exclude name="lib/message-flow-1.0.0.jar"/>
                     <exclude name="lib/expressions-1.0.0.jar"/>
+                    <include name="lib/slf4j-api-*.jar"/>
                     <exclude name="lib/bcpkix-jdk15on-1.60.jar"/>
                     <exclude name="lib/bcprov-jdk15on-1.60.jar"/>
                   </fileset>

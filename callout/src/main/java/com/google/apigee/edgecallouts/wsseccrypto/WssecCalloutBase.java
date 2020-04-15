@@ -120,7 +120,7 @@ public abstract class WssecCalloutBase {
   protected ContentEncryptionCipher getContentEncryptionCipher(MessageContext msgCtxt)
       throws Exception {
     String cipher = getSimpleOptionalProperty("content-encryption-cipher", msgCtxt);
-    if (cipher == null) return ContentEncryptionCipher.AES_192;
+    if (cipher == null) return ContentEncryptionCipher.NOT_SPECIFIED;
 
     cipher = cipher.replaceAll("-", "_");
     final Optional<ContentEncryptionCipher> parsedCipher =

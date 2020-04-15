@@ -215,7 +215,7 @@ public class TestWssecEncryptCallout extends CalloutTestBase {
     Map<String, String> props = new HashMap<String, String>();
     props.put("debug", "true");
     props.put("source", "message.content");
-    props.put("key-location", "under-encrypted-data");
+    props.put("encrypted-key-location", "under-encrypted-data");
     props.put("certificate", "{my-certificate}");
     props.put("output-variable", "output");
 
