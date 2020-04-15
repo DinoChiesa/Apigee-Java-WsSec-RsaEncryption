@@ -14,7 +14,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <santuario.version>2.1.1</santuario.version>
+    <santuario.version>[2.1.4,)</santuario.version>
     <testng.version>6.8.7</testng.version>
     <bouncycastle.version>1.60</bouncycastle.version>
     <apiproxy.java.rsrc.dir>../bundle/apiproxy/resources/java</apiproxy.java.rsrc.dir>
