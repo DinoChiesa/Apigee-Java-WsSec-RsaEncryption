@@ -1,7 +1,6 @@
-package com.google.apigee.edgecallouts.test;
+package com.google.apigee.callouts.wsseccrypto;
 
 import com.apigee.flow.execution.ExecutionResult;
-import com.google.apigee.edgecallouts.wsseccrypto.Decrypt;
 import java.util.HashMap;
 import java.util.Map;
 import org.testng.Assert;

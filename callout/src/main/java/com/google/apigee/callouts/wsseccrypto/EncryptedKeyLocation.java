@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.wsseccrypto;
+package com.google.apigee.callouts.wsseccrypto;
 
 public enum EncryptedKeyLocation {
   NOT_SPECIFIED,

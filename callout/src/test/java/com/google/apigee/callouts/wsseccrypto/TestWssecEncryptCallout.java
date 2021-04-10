@@ -1,7 +1,6 @@
-package com.google.apigee.edgecallouts.test;
+package com.google.apigee.callouts.wsseccrypto;
 
 import com.apigee.flow.execution.ExecutionResult;
-import com.google.apigee.edgecallouts.wsseccrypto.Encrypt;
 import com.google.apigee.xml.Namespaces;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

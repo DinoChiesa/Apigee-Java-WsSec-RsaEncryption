@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.wsseccrypto;
+package com.google.apigee.callouts.wsseccrypto;
 
 public enum RsaAlgorithm {
   NOT_SPECIFIED,

@@ -1,4 +1,4 @@
-package com.google.apigee.edgecallouts.wsseccrypto;
+package com.google.apigee.callouts.wsseccrypto;
 
 import java.util.Optional;
 import org.apache.xml.security.encryption.XMLCipher;

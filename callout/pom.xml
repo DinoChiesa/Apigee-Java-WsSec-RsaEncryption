@@ -5,8 +5,8 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.apigee.edgecallouts</groupId>
   <artifactId>apigee-wssec-xmlenc</artifactId>
-  <version>20200413</version>
-  <name>EdgeJavaWssecEncryption</name>
+  <version>20210409</version>
+  <name>ApigeeJavaWssecEncryption</name>
   <url>http://maven.apache.org</url>
   <packaging>jar</packaging>
   <properties>
@@ -181,7 +181,7 @@ do it manually by running these commands:
             <configuration>
               <rules>
                 <requireMavenVersion>
-                  <version>3.0.5</version>
+                  <version>3.5.0</version>
                 </requireMavenVersion>
               </rules>
             </configuration>

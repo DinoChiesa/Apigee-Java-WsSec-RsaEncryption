@@ -2,7 +2,7 @@
 // ------------------------------------------------------------------
 //
 
-package com.google.apigee.edgecallouts.test;
+package com.google.apigee.callouts.wsseccrypto;
 
 import com.apigee.flow.execution.ExecutionContext;
 import com.apigee.flow.message.Message;
@@ -20,7 +20,6 @@ public abstract class CalloutTestBase {
   static {
     java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
   }
-
 
   static class KeyCertPair {
     public String privateKey;

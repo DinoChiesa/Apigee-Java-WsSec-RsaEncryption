@@ -1,7 +1,7 @@
 # Java Callout for WS-Security RSA Encryption
 
 This directory contains the Java source code and pom.xml file required to
-compile a simple Java callout for Apigee Edge, that encrypts or decrypts the
+compile a simple Java callout for Apigee, that encrypts or decrypts the
 Body of a SOAP message per the WS-Security standard, using an RSA Key and an
 x509v3 certificate.
 
@@ -12,7 +12,7 @@ This example is not an official Google product, nor is it part of an official Go
 
 ## License
 
-This material is Copyright 2018-2020, Google LLC.
+This material is Copyright 2018-2021, Google LLC.
 and is licensed under the Apache 2.0 license. See the [LICENSE](LICENSE) file.
 
 This code is open source but you don't need to compile it in order to use it.
@@ -33,10 +33,10 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-wssec-xmlenc-20200413.jar . Within that jar, there are two callout classes,
+There is a single jar, apigee-wssec-xmlenc-20210409.jar . Within that jar, there are two callout classes,
 
-* com.google.apigee.edgecallouts.wsseccrypto.Encrypt - encrypts a SOAP document.
-* com.google.apigee.edgecallouts.wsseccrypto.Decrypt - decrypts the encrypted SOAP document
+* com.google.apigee.callouts.wsseccrypto.Encrypt - encrypts a SOAP document.
+* com.google.apigee.callouts.wsseccrypto.Decrypt - decrypts the encrypted SOAP document
 
 The Encrypt callout has these constraints and features:
 * supports RSA key encryption algorithms - PKCS1.5 or OAEP
@@ -70,8 +70,8 @@ looks like this:
     <Property name='output-variable'>output</Property>
     <Property name='certificate'>{my_certificate}</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.wsseccrypto.Encrypt</ClassName>
-  <ResourceURL>java://apigee-wssec-xmlenc-20200413.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.wsseccrypto.Encrypt</ClassName>
+  <ResourceURL>java://apigee-wssec-xmlenc-20210409.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -260,8 +260,8 @@ Regarding `key-identifier-type`, these are the options:
     <Property name='require-expiry'>false</Property>
     <Property name='private-key'>{my_private_key}</Property>
   </Properties>
-  <ClassName>com.google.apigee.edgecallouts.wsseccrypto.Decrypt</ClassName>
-  <ResourceURL>java://apigee-wssec-xmlenc-20200413.jar</ResourceURL>
+  <ClassName>com.google.apigee.callouts.wsseccrypto.Decrypt</ClassName>
+  <ResourceURL>java://apigee-wssec-xmlenc-20210409.jar</ResourceURL>
 </JavaCallout>
 ```
 
