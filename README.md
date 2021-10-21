@@ -5,7 +5,6 @@ compile a simple Java callout for Apigee, that encrypts or decrypts the
 Body of a SOAP message per the WS-Security standard, using an RSA Key and an
 x509v3 certificate.
 
-
 ## Disclaimer
 
 This example is not an official Google product, nor is it part of an official Google product.
@@ -55,6 +54,16 @@ The Decrypt callout has these constraints and features:
 Make sure these JARs are available as resources in the  proxy or in the environment or organization.
 
 * xmlsec-2.1.5.jar and its dependencies
+
+* Bouncy Castle
+
+  The BouncyCastle jar is available as part of the Apigee runtime, although it is
+  not a documented part of the Apigee platform and is therefore not guaranteed to
+  remain available. In the highly unlikely future scenario in which Apigee removes
+  the BC jar from the Apigee runtime, you could simply upload the BouncyCastle jar
+  as a resource, either with the apiproxy or with the organization or environment,
+  to resolve the dependency.
+
 
 ## Usage
 
