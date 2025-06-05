@@ -1,4 +1,4 @@
-<RaiseFault name='RF-MissingThumbprint'>
+<RaiseFault name='RF-Missing-Thumbprint'>
   <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
   <FaultResponse>
     <Set>

@@ -6,5 +6,5 @@
     <Property name='content-encryption-cipher'>aes-192-gcm</Property>
   </Properties>
   <ClassName>com.google.apigee.callouts.wsseccrypto.Encrypt</ClassName>
-  <ResourceURL>java://apigee-wssec-xmlenc-20210409.jar</ResourceURL>
+  <ResourceURL>java://apigee-wssec-xmlenc-20250604.jar</ResourceURL>
 </JavaCallout>

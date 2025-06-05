@@ -1,4 +1,4 @@
-<AssignMessage name='AM-EncryptResponse'>
+<AssignMessage name='AM-Response-for-Encrypt'>
   <Remove>
     <Headers/>
   </Remove>

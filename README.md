@@ -5,20 +5,28 @@ compile a simple Java callout for Apigee, that encrypts or decrypts the
 Body of a SOAP message per the WS-Security standard, using an RSA Key and an
 x509v3 certificate.
 
+
+## As of 2025 June, Current builds of this callout will not work with current versions of Apigee.
+
+----
+
 ## Disclaimer
 
 This example is not an official Google product, nor is it part of an official Google product.
 
 ## License
 
-This material is Copyright 2018-2021, Google LLC.
+This material is Copyright 2018-2021,2025 Google LLC.
 and is licensed under the Apache 2.0 license. See the [LICENSE](LICENSE) file.
 
 This code is open source but you don't need to compile it in order to use it.
 
-## Building
+## Usage
 
-Use maven to build and package the jar. You need maven v3.5 at a minimum.
+You do not need to build the jar in order to use it. If you choose to build the
+jar, you can do so. Full instructions for that are below.  You will need to use
+java 11 and maven to build and package the jar. You need maven v3.9 at a
+minimum.
 
 ```
 mvn clean package
@@ -32,7 +40,7 @@ environment-wide or organization-wide jar via the Apigee administrative API.
 
 ## Details
 
-There is a single jar, apigee-wssec-xmlenc-20210409.jar . Within that jar, there are two callout classes,
+There is a single jar, apigee-wssec-xmlenc-20250604.jar . Within that jar, there are two callout classes,
 
 * com.google.apigee.callouts.wsseccrypto.Encrypt - encrypts a SOAP document.
 * com.google.apigee.callouts.wsseccrypto.Decrypt - decrypts the encrypted SOAP document
@@ -53,9 +61,9 @@ The Decrypt callout has these constraints and features:
 
 Make sure these JARs are available as resources in the  proxy or in the environment or organization.
 
-* xmlsec-2.1.5.jar and its dependencies
+* xmlsec-2.2.6.jar and its dependencies
 
-* Bouncy Castle
+* Bouncy Castle jdk18on 1.78
 
   The BouncyCastle jar is available as part of the Apigee runtime, although it is
   not a documented part of the Apigee platform and is therefore not guaranteed to
@@ -80,7 +88,7 @@ looks like this:
     <Property name='certificate'>{my_certificate}</Property>
   </Properties>
   <ClassName>com.google.apigee.callouts.wsseccrypto.Encrypt</ClassName>
-  <ResourceURL>java://apigee-wssec-xmlenc-20210409.jar</ResourceURL>
+  <ResourceURL>java://apigee-wssec-xmlenc-20250604.jar</ResourceURL>
 </JavaCallout>
 ```
 
@@ -164,16 +172,16 @@ variations possible.
 
 The available properties are:
 
-| name                   | description                                                   |
-| ---------------------- | ------------------------------------------------------------- |
-| source                 | source of the SOAP document to sign. Usually message.content. |
-| soap-version           | soap1.1 or soap1.2.  Defaults to soap1.1                      |
-| certificate            | required. the X509v3 certificate to use for the public key for encryption. This cert will then be referenced in the encrypted document in some way. |
-| rsa-algorithm          | optional. PKCS1\_5 or OAEP. Defaults to PKCS1\_5                        |
-| key-identifier-type    | optional. how to embed a reference to the key in the output document.   |
-| encrypted-key-location | optional. where to embed the encrypted key in the output document.  This is either `in-security-header` or `under-encrypted-data`, Defaults to in header.  |
-| issuer-name-style      | optional. One of {`SHORT`, `SUBJECT_DN`}.  See below for details. |
-| content-encryption-cipher | AES-128-CBC, AES-192-CBC, AES-256-CBC, AES-128-GCM, AES-192-GCM, AES-256-GCM or TRIPLEDES. Defaults to AES-128-CBC. ) |
+| name                      | description                                                                                                                                               |
+|---------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| source                    | source of the SOAP document to sign. Usually message.content.                                                                                             |
+| soap-version              | soap1.1 or soap1.2.  Defaults to soap1.1                                                                                                                  |
+| certificate               | required. the X509v3 certificate to use for the public key for encryption. This cert will then be referenced in the encrypted document in some way.       |
+| rsa-algorithm             | optional. PKCS1\_5 or OAEP. Defaults to PKCS1\_5                                                                                                          |
+| key-identifier-type       | optional. how to embed a reference to the key in the output document.                                                                                     |
+| encrypted-key-location    | optional. where to embed the encrypted key in the output document.  This is either `in-security-header` or `under-encrypted-data`, Defaults to in header. |
+| issuer-name-style         | optional. One of {`SHORT`, `SUBJECT_DN`}.  See below for details.                                                                                         |
+| content-encryption-cipher | AES-128-CBC, AES-192-CBC, AES-256-CBC, AES-128-GCM, AES-192-GCM, AES-256-GCM or TRIPLEDES. Defaults to AES-128-CBC. )                                     |
 
 
 Regarding `key-identifier-type`, these are the options:
@@ -270,18 +278,18 @@ Regarding `key-identifier-type`, these are the options:
     <Property name='private-key'>{my_private_key}</Property>
   </Properties>
   <ClassName>com.google.apigee.callouts.wsseccrypto.Decrypt</ClassName>
-  <ResourceURL>java://apigee-wssec-xmlenc-20210409.jar</ResourceURL>
+  <ResourceURL>java://apigee-wssec-xmlenc-20250604.jar</ResourceURL>
 </JavaCallout>
 ```
 
 The properties are:
 
-| name                   | description |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| source                 | optional. the variable name in which to obtain the source signed document to validate. Defaults to message.content |
-| private-key            | required. The PEM file containing the RSA private key to decrypt. |
-| rsa-algorithm          | optional. Specify PKCS1\_5 or OAEP to require either of these.   |
-| content-encryption-algorithm | optional. Specify one of the AES-* or TRIPLEDES to require tone of those. |
+| name                         | description                                                                                                        |
+|------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| source                       | optional. the variable name in which to obtain the source signed document to validate. Defaults to message.content |
+| private-key                  | required. The PEM file containing the RSA private key to decrypt.                                                  |
+| rsa-algorithm                | optional. Specify PKCS1\_5 or OAEP to require either of these.                                                     |
+| content-encryption-algorithm | optional. Specify one of the AES-* or TRIPLEDES to require tone of those.                                          |
 
 See [the example API proxy included here](./bundle) for a working example of these policy configurations.
 
@@ -298,10 +306,17 @@ This request encrypts using key encryption RSA PKCS1.5,  content encryption AES-
 using BinarySecurityToken to embed the certificate:
 
 ```
+# Apigee Edge
 ORG=myorgname
 ENV=myenv
 curl -i https://${ORG}-${ENV}.apigee.net/wssec-enc/encrypt1  -H content-type:application/xml \
     --data-binary @./sample-data/request1.xml
+
+# Apigee X / hybrid
+endpoint=https://my-apigee-endpoint.net
+curl -i $endpoint/wssec-enc/encrypt1  -H content-type:application/xml \
+    --data-binary @./sample-data/request1.xml
+
 ```
 
 There are other combinations; see the API Proxy bundle for the variations of

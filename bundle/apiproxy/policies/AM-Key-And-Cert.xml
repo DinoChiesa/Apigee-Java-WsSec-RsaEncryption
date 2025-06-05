@@ -1,4 +1,4 @@
-<AssignMessage name='AM-KeyAndCert'>
+<AssignMessage name='AM-Key-And-Cert'>
   <AssignVariable>
     <Name>my_certificate</Name>
     <Value>
